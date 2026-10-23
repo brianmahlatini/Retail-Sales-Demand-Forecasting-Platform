@@ -1,107 +1,185 @@
 # Retail Sales & Demand Forecasting Platform
 
-[brianmahlatini](https://github.com/brianmahlatini) / [Retail-Sales-Demand-Forecasting-Platform](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform)
+A senior-level full-stack machine learning project that forecasts product-store demand, evaluates time-series and supervised ML models, estimates forecast uncertainty, and recommends inventory actions to reduce stockouts and overstocking.
 
-## Repository Navigation
+## Features
 
-- [Code](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform)
-- [Issues](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/issues)
-- [Pull Requests](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/pulls)
-- [Actions](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/actions)
-- [Projects](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/projects)
-- [Wiki](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/wiki)
-- [Security and Quality](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform/security)
+- Synthetic daily retail sales generation with products, stores, categories, prices, promotions, holidays, seasonality, and stock levels
+- Time-series feature engineering with calendar fields, lag variables, rolling means, and rolling volatility
+- Time-based train/test split to prevent future information leaking into model training
+- Baseline model: seasonal naive forecasting using previous-week sales
+- Statistical model: SARIMA on aggregate daily demand
+- Supervised ML baseline: `RandomForestRegressor`
+- Stronger supervised ML model: `LightGBMRegressor`
+- Prediction intervals using residual quantiles from the holdout set
+- Inventory recommendation scoring using model-predicted sales, days of cover, stockout probability, and overstock probability
+- FastAPI backend for forecasts, model metrics, feature explanations, and inventory recommendations
+- React TypeScript dashboard for actual vs predicted sales, model quality, forecast uncertainty, and replenishment actions
+- PostgreSQL schema and Power BI reporting notes
 
-## Objective
+## Tech Stack
 
-This project predicts future retail sales by product, store, category, and time period so planners can reduce stockouts and overstocking. It combines generated historical sales with prices, promotions, holidays, seasonality, lag variables, rolling averages, and inventory levels.
+### Machine Learning
 
-## Senior-Level ML Implementation
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- LightGBM
+- statsmodels
+- joblib
 
-This is not a rule-only or keyword-based project. The forecasting and recommendation workflow uses supervised regression models trained on a time-series retail dataset.
+### Backend
 
-**Target variable:** `sales_units`
+- FastAPI
+- Uvicorn
+- pytest
 
-**Input features X include:**
+### Frontend
 
-- Price and discount fields: `base_price`, `price`, `discount_pct`
-- Promotion and holiday indicators: `promo_flag`, `holiday_flag`
-- Inventory signal: `stock_on_hand`
-- Calendar features: day of week, week of year, month, quarter, weekend flag, yearly sine/cosine seasonality
-- Encoded context: category and store type codes
-- Time-series demand history: `lag_7`, `lag_14`, `lag_28`
-- Rolling demand features: 7, 14, and 28 day rolling means plus rolling standard deviation
+- React
+- TypeScript
+- Vite
+- Recharts
+- Lucide React
 
-**Models trained:**
+### Database & Reporting
 
-- Seasonal naive baseline using previous-week sales
-- SARIMA statistical model for aggregate daily demand
-- `RandomForestRegressor` baseline supervised ML model
-- `LightGBMRegressor` stronger boosted model when LightGBM is installed
-- `GradientBoostingRegressor` fallback if LightGBM is unavailable
+- PostgreSQL schema
+- Docker Compose
+- Power BI report design notes
 
-**Evaluation metrics:**
+## Project Structure
 
-- MAE
-- RMSE
-- WAPE
-- Forecast bias
+```text
+.
+|-- backend/
+|   |-- app/
+|   |   |-- main.py
+|   |   |-- db/
+|   |   |   |-- schema.sql
+|   |   |-- ml/
+|   |   |   |-- artifacts/
+|   |   |   |-- features.py
+|   |   |   |-- prediction_model.py
+|   |-- scripts/
+|   |   |-- train_model.py
+|   |-- tests/
+|   |   |-- test_api.py
+|   |   |-- test_features.py
+|   |-- requirements.txt
+|-- frontend/
+|   |-- src/
+|   |   |-- App.tsx
+|   |   |-- main.tsx
+|   |   |-- components/
+|   |   |-- services/
+|   |   |-- styles/
+|   |-- package.json
+|   |-- tsconfig.json
+|   |-- vite.config.ts
+|-- infra/
+|   |-- docker-compose.yml
+|-- reports/
+|   |-- powerbi_model_notes.md
+|-- .gitignore
+|-- README.md
+```
 
-**Prediction intervals:** residual p10/p90 quantiles from the time-based holdout set are applied to the best model's predictions.
+## ML Design
 
-## Recommendations
+### Dataset
 
-Inventory recommendations are ranked using model-predicted demand. The backend calculates days of cover, stockout probability, and overstock probability from forecasted sales and current stock. The UI clearly shows the predicted demand and the resulting inventory action:
+The training script generates a deterministic retail demand dataset with:
+
+- Product profile: product ID, product name, category, base price
+- Store profile: store ID, store name, store type, demand multiplier
+- Commercial signals: price, discount percentage, promotion flag
+- Calendar signals: day of week, week of year, month, quarter, weekend flag, holiday flag, annual seasonality
+- Inventory signal: stock on hand
+- Demand label: daily unit sales
+
+Latest generated dataset:
+
+| Raw Rows | Supervised Rows | Products | Stores | Date Range |
+|---:|---:|---:|---:|---|
+| 82,140 | 80,460 | 12 | 5 | 2023-01-01 to 2026-09-30 |
+
+### Features X
+
+The supervised models use product-store-day features:
+
+- Price and discount features
+- Promotion and holiday indicators
+- Current stock on hand
+- Calendar and cyclical seasonality features
+- Encoded category and store type
+- Previous demand lags: `lag_7`, `lag_14`, `lag_28`
+- Rolling demand statistics: 7, 14, and 28 day rolling means plus 7 day rolling standard deviation
+
+### Target y
+
+`sales_units` is the daily number of units sold for a specific product and store.
+
+### Models Trained
+
+- `Seasonal Naive` baseline
+- `SARIMA Aggregate` statistical model
+- `RandomForestRegressor` supervised ML baseline
+- `LightGBMRegressor` stronger supervised ML model
+
+Latest training run:
+
+| Model | MAE | RMSE | WAPE | Forecast Bias |
+|---|---:|---:|---:|---:|
+| Seasonal Naive | 19.63 | 26.17 | 23.20% | -1.10% |
+| SARIMA Aggregate | 263.03 | 417.47 | 5.18% | -4.56% |
+| RandomForestRegressor | 9.27 | 12.06 | 10.95% | -1.56% |
+| LightGBMRegressor | 8.79 | 11.26 | 10.38% | -1.27% |
+
+Selected runtime model: `LightGBMRegressor`.
+
+SARIMA is evaluated on aggregate daily demand, while RandomForest and LightGBM are row-level product-store supervised models.
+
+Artifacts are saved to:
+
+- `backend/app/ml/artifacts/demand_model.joblib`
+- `backend/app/ml/artifacts/metrics.json`
+- `backend/app/ml/artifacts/retail_sales_history.csv`
+- `backend/app/ml/artifacts/forecast_sample.json`
+- `backend/app/ml/artifacts/inventory_recommendations.json`
+
+## Inventory Recommendations
+
+The recommendation layer uses the trained model's predicted demand as the ranking input. It calculates:
+
+- Predicted daily sales
+- Prediction lower and upper bounds
+- Days of stock cover
+- Stockout probability
+- Overstock probability
+- Recommended action
+
+Actions returned by the API:
 
 - `Reorder soon`
 - `Reduce replenishment`
 - `Maintain plan`
 
-## Project Structure
+## Local Setup
+
+### 1. Backend
+
+```bash
+python -m pip install -r backend/requirements.txt
+python backend/scripts/train_model.py
+uvicorn app.main:app --app-dir backend --reload
+```
+
+Backend API:
 
 ```text
-backend/
-  app/
-    main.py
-    db/
-      schema.sql
-    ml/
-      features.py
-      prediction_model.py
-      artifacts/
-  scripts/
-    train_model.py
-  tests/
-frontend/
-  src/
-    components/
-    services/
-    styles/
-infra/
-  docker-compose.yml
-README.md
-```
-
-## Run Locally
-
-Create the backend environment:
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r backend/requirements.txt
-```
-
-Train the models and generate artifacts:
-
-```bash
-python backend/scripts/train_model.py
-```
-
-Start the API:
-
-```bash
-uvicorn app.main:app --app-dir backend --reload
+http://localhost:8000/health
 ```
 
 Optional PostgreSQL service:
@@ -110,7 +188,7 @@ Optional PostgreSQL service:
 docker compose -f infra/docker-compose.yml up -d
 ```
 
-Start the frontend:
+### 2. Frontend
 
 ```bash
 cd frontend
@@ -118,30 +196,31 @@ npm install
 npm run dev
 ```
 
-The dashboard reads from `http://localhost:8000` by default. Set `VITE_API_BASE_URL` if the API runs elsewhere.
+Frontend dashboard:
 
-## Testing and Build
-
-Backend tests:
-
-```bash
-pytest backend/tests
+```text
+http://localhost:5173
 ```
 
-Frontend build:
-
-```bash
-cd frontend
-npm run build
-```
+Set `VITE_API_BASE_URL` if the API runs on a different port.
 
 ## API Endpoints
 
 - `GET /health`
 - `GET /model/features`
 - `GET /model/metrics`
-- `GET /forecasts`
-- `GET /recommendations`
+- `GET /forecasts?limit=600`
+- `GET /recommendations?limit=60`
+
+The recommendation response includes:
+
+- Product and store profile
+- Model-predicted sales
+- Current stock on hand
+- Days of cover
+- Stockout probability
+- Overstock probability
+- Inventory action
 
 ## Retraining
 
@@ -151,11 +230,37 @@ Run:
 python backend/scripts/train_model.py
 ```
 
-The script regenerates the dataset, builds supervised features, performs a time-based train/test split, trains the baseline and boosted models, evaluates them, and writes:
+This regenerates:
 
-- `backend/app/ml/artifacts/demand_model.joblib`
-- `backend/app/ml/artifacts/metrics.json`
-- `backend/app/ml/artifacts/retail_sales_history.csv`
-- `backend/app/ml/artifacts/forecast_sample.json`
-- `backend/app/ml/artifacts/inventory_recommendations.json`
+- Synthetic retail sales dataset
+- Feature matrix
+- Seasonal naive baseline
+- SARIMA aggregate model comparison
+- RandomForest baseline
+- LightGBM stronger model
+- Model comparison metrics
+- Forecast sample with uncertainty bounds
+- Inventory recommendation queue
+- Saved model artifacts
+
+## Testing
+
+```bash
+pytest backend/tests
+```
+
+Frontend production build:
+
+```bash
+cd frontend
+npm run build
+```
+
+## Repository
+
+Owner: `brianmahlatini`
+
+Repository: `Retail-Sales-Demand-Forecasting-Platform`
+
+GitHub: [Retail-Sales-Demand-Forecasting-Platform](https://github.com/brianmahlatini/Retail-Sales-Demand-Forecasting-Platform)
 
