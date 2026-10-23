@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: retail-demand-postgres
+    environment:
+      POSTGRES_DB: retail_demand
+      POSTGRES_USER: retail_user
+      POSTGRES_PASSWORD: retail_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - retail-demand-data:/var/lib/postgresql/data
+      - ../backend/app/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  retail-demand-data:
+

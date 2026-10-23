@@ -1,0 +1,70 @@
+{
+  "best_model": "LightGBMRegressor",
+  "models_trained": [
+    "Seasonal Naive",
+    "SARIMA Aggregate",
+    "RandomForestRegressor",
+    "LightGBMRegressor"
+  ],
+  "metrics": {
+    "Seasonal Naive": {
+      "MAE": 19.633333333333333,
+      "RMSE": 26.17160604477614,
+      "WAPE": 0.23195724040457963,
+      "Forecast Bias": -0.011031205490661106
+    },
+    "SARIMA Aggregate": {
+      "MAE": 263.0342242806416,
+      "RMSE": 417.4687623530333,
+      "WAPE": 0.05179345738208565,
+      "Forecast Bias": -0.045595644599075634
+    },
+    "RandomForestRegressor": {
+      "MAE": 9.271228190549973,
+      "RMSE": 12.0609351606449,
+      "WAPE": 0.10953455889173766,
+      "Forecast Bias": -0.015641605525730688
+    },
+    "LightGBMRegressor": {
+      "MAE": 8.786074355158283,
+      "RMSE": 11.257801144098211,
+      "WAPE": 0.1038027280854989,
+      "Forecast Bias": -0.012731085606741377
+    }
+  },
+  "feature_columns": [
+    "base_price",
+    "price",
+    "discount_pct",
+    "promo_flag",
+    "holiday_flag",
+    "stock_on_hand",
+    "day_of_week",
+    "week_of_year",
+    "month",
+    "quarter",
+    "is_weekend",
+    "day_of_year_sin",
+    "day_of_year_cos",
+    "category_code",
+    "store_type_code",
+    "lag_7",
+    "lag_14",
+    "lag_28",
+    "rolling_7_mean",
+    "rolling_14_mean",
+    "rolling_28_mean",
+    "rolling_7_std"
+  ],
+  "target": "sales_units",
+  "dataset": {
+    "rows_raw": 82140,
+    "rows_supervised": 80460,
+    "products": 12,
+    "stores": 5,
+    "date_min": "2023-01-01",
+    "date_max": "2026-09-30"
+  },
+  "prediction_intervals": "Residual p10/p90 quantiles from the time-based holdout set.",
+  "statistical_model_note": "SARIMA is evaluated on aggregate daily demand, while RandomForest and LightGBM are row-level product-store supervised models."
+}
